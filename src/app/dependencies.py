@@ -38,3 +38,18 @@ async def get_current_user(
 
 
 CurrentUser = Annotated[User, Depends(get_current_user)]
+
+
+def require_role(required_role: str):
+    """Guard endpoint to require a specific user role or admin."""
+
+    async def _guard(current_user: CurrentUser) -> User:
+        if current_user.role != required_role and current_user.role != "admin":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Operation requires '{required_role}' privileges",
+            )
+        return current_user
+
+    return _guard
+

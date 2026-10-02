@@ -18,13 +18,20 @@ class UserRead(BaseModel):
 
     id: int
     email: EmailStr
+    role: str = "user"
     is_active: bool
     created_at: datetime
 
 
 class TokenPair(BaseModel):
     access_token: str
+    refresh_token: str | None = None
     token_type: str = "bearer"
+
+
+class RefreshRequest(BaseModel):
+    refresh_token: str
+
 
 
 class ItemCreate(BaseModel):

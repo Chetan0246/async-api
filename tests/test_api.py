@@ -69,3 +69,39 @@ async def test_items_crud(auth_headers: dict[str, str], client: AsyncClient) -> 
 async def test_protected_route_requires_token(client: AsyncClient) -> None:
     resp = await client.get("/items")
     assert resp.status_code == 401
+
+
+async def test_token_refresh_and_logout_flow(client: AsyncClient) -> None:
+    # 1. Register & login
+    await client.post(
+        "/auth/register", json={"email": "refresh_user@example.com", "password": "supersecret123"}
+    )
+    login_resp = await client.post(
+        "/auth/login", json={"email": "refresh_user@example.com", "password": "supersecret123"}
+    )
+    assert login_resp.status_code == 200
+    data = login_resp.json()
+    assert "access_token" in data
+    assert "refresh_token" in data
+    refresh_token = data["refresh_token"]
+
+    # 2. Refresh access token
+    ref_resp = await client.post("/auth/refresh", json={"refresh_token": refresh_token})
+    assert ref_resp.status_code == 200
+    new_data = ref_resp.json()
+    assert "access_token" in new_data
+    assert "refresh_token" in new_data
+    new_refresh = new_data["refresh_token"]
+
+    # 3. Old refresh token was rotated / revoked
+    old_reuse = await client.post("/auth/refresh", json={"refresh_token": refresh_token})
+    assert old_reuse.status_code == 401
+
+    # 4. Logout revokes active refresh token
+    logout_resp = await client.post("/auth/logout", json={"refresh_token": new_refresh})
+    assert logout_resp.status_code == 204
+
+    # 5. Revoked token rejected on subsequent refresh
+    revoked_reuse = await client.post("/auth/refresh", json={"refresh_token": new_refresh})
+    assert revoked_reuse.status_code == 401
+

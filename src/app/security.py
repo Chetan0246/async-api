@@ -30,12 +30,38 @@ def create_access_token(subject: str, *, extra: dict[str, Any] | None = None) ->
     now = datetime.now(UTC)
     payload: dict[str, Any] = {
         "sub": subject,
+        "type": "access",
         "iat": int(now.timestamp()),
         "exp": int((now + timedelta(minutes=settings.access_token_ttl_minutes)).timestamp()),
     }
     if extra:
         payload.update(extra)
     return jwt.encode(payload, settings.secret_key, algorithm=settings.jwt_algorithm)
+
+
+def create_refresh_token(subject: str, *, extra: dict[str, Any] | None = None) -> str:
+    settings = get_settings()
+    now = datetime.now(UTC)
+    payload: dict[str, Any] = {
+        "sub": subject,
+        "type": "refresh",
+        "iat": int(now.timestamp()),
+        "exp": int((now + timedelta(days=7)).timestamp()),
+    }
+    if extra:
+        payload.update(extra)
+    return jwt.encode(payload, settings.secret_key, algorithm=settings.jwt_algorithm)
+
+
+_revoked_tokens: set[str] = set()
+
+
+def revoke_token(token: str) -> None:
+    _revoked_tokens.add(token)
+
+
+def is_token_revoked(token: str) -> bool:
+    return token in _revoked_tokens
 
 
 def decode_token(token: str) -> dict[str, Any]:

@@ -10,7 +10,9 @@ and a websocket **room hub**.
 
 ## Features
 
-- JWT auth (`/auth/register`, `/auth/login`) with Argon2-hashed passwords
+- **JWT Auth with Dual-Token Rotation:** Access tokens + rotatable refresh tokens (`/auth/login`, `/auth/refresh`, `/auth/logout`) with revocation blacklist
+- **Role-Based Access Control (RBAC):** Configurable user roles (`user`, `admin`) and `require_role()` dependency guards
+- **Health & Telemetry:** `/health` endpoint reporting system status, uptime, and active WebSocket rooms
 - Owner-scoped CRUD for items with pagination
 - JWT-authenticated WebSocket rooms at `/ws/{room}?token=...`
 - In-process sliding-window rate limiting (429 + `Retry-After`)

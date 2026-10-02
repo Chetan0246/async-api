@@ -47,9 +47,20 @@ def create_app() -> FastAPI:
     # One hub per app instance (asyncio primitives are event-loop-bound).
     app.state.hub = ConnectionHub()
 
+    import time
+    start_time = time.monotonic()
+
     @app.get("/health", tags=["meta"])
-    async def health() -> dict[str, str]:
-        return {"status": "ok", "env": settings.app_env}
+    async def health() -> dict[str, str | float | int]:
+        hub = getattr(app.state, "hub", None)
+        active_rooms = len(hub.room_count()) if hub else 0
+        return {
+            "status": "ok",
+            "env": settings.app_env,
+            "version": "1.0.0",
+            "uptime_seconds": round(time.monotonic() - start_time, 2),
+            "active_ws_rooms": active_rooms,
+        }
 
     return app
 
