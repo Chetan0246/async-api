@@ -71,7 +71,7 @@ async def refresh_tokens(
             raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid token type")
         user_id = int(data["sub"])
     except (jwt.PyJWTError, KeyError, ValueError):
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid refresh token")
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid refresh token") from None
 
     user = await session.get(User, user_id)
     if user is None or not user.is_active:
